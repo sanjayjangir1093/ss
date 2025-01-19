@@ -1,0 +1,44 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Angular app
+        run: npm run build --prod
+
+      - name: Log in to Amazon ECR
+        run: |
+          echo "${{ secrets.AWS_ACCESS_KEY_ID }}" | docker login --username AWS --password-stdin your-account-id.dkr.ecr.your-region.amazonaws.com
+
+      - name: Build Docker image
+        run: |
+          docker build -t your-image-name .
+
+      - name: Tag Docker image
+        run: |
+          docker tag your-image-name:latest your-account-id.dkr.ecr.your-region.amazonaws.com/your-repo-name:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push your-account-id.dkr.ecr.your-region.amazonaws.com/your-repo-name:latest
